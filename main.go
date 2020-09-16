@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sigs.k8s.io/external-dns/provider/wunderdns"
 	"syscall"
 	"time"
 
@@ -148,6 +149,8 @@ func main() {
 
 	var p provider.Provider
 	switch cfg.Provider {
+	case "wunderdns":
+		p, err = wunderdns.NewProvider(domainFilter, cfg.WunderDNSUrl, cfg.WunderDNSToken, cfg.WunderDNSSecret, cfg.WunderDNSVerify)
 	case "akamai":
 		p = akamai.NewAkamaiProvider(
 			akamai.AkamaiConfig{

@@ -4,18 +4,18 @@ type record struct {
 
 }
 
-func (p *WunderDNSProvider) getMyRecords() {
+func (p *Provider) getMyRecords() {
 
 }
 
-func (p *WunderDNSProvider) createRecord() {
+func (p *Provider) createRecord() {
 
 }
 
-func (p *WunderDNSProvider) updateRecord() {
+func (p *Provider) updateRecord() {
 
 }
 
-func (p *WunderDNSProvider) deleteRecord() {
+func (p *Provider) deleteRecord() {
 
 }

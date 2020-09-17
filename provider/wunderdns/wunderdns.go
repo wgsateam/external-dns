@@ -2,7 +2,10 @@ package wunderdns
 
 import (
 	"context"
+	"crypto/tls"
 	"net"
+	"net/http"
+	"net/url"
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/plan"
 	"sigs.k8s.io/external-dns/provider"
@@ -16,15 +19,16 @@ const (
 
 type Provider struct {
 	provider.BaseProvider
-	url          string
+	url          *url.URL
 	token        string
 	secret       string
 	verify       bool
-	blocks       []*net.IPNet
+	privateNets  []*net.IPNet
 	domainFilter endpoint.DomainFilter
+	httpClient   *http.Client
 }
 
-func NewProvider(domainFilter endpoint.DomainFilter, url, token, secret string, verify bool) (*Provider, error) {
+func NewProvider(domainFilter endpoint.DomainFilter, confUrl, confToken, confSecret string, confVerify bool) (*Provider, error) {
 	blocks := make([]*net.IPNet, 0)
 	for _, cidr := range []string{
 		"127.0.0.0/8",    // IPv4 loopback
@@ -42,27 +46,38 @@ func NewProvider(domainFilter endpoint.DomainFilter, url, token, secret string, 
 		}
 		blocks = append(blocks, block)
 	}
-
+	u, e := url.Parse(confUrl)
+	if e != nil {
+		return nil, e
+	}
 	return &Provider{
-		url:          url,
-		token:        token,
-		secret:       secret,
-		verify:       verify,
+		url:          u,
+		token:        confToken,
+		secret:       confSecret,
+		verify:       confVerify,
 		domainFilter: domainFilter,
-		blocks:       blocks,
+		privateNets:  blocks,
+		httpClient: &http.Client{
+			Transport:     &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: !confVerify}},
+			CheckRedirect: nil,
+			Jar:           nil,
+			Timeout:       0,
+		},
 	}, nil
 }
+
 func (w *Provider) isPrivateIP(ip net.IP) bool {
 	if ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
 		return true
 	}
-	for _, n := range w.blocks {
+	for _, n := range w.privateNets {
 		if n.Contains(ip) {
 			return true
 		}
 	}
 	return false
 }
+
 func (w *Provider) guessView(e endpoint.Endpoint) string {
 	// guess view by looking at targets
 	if v, ok := e.Labels["view"]; ok {
@@ -108,9 +123,19 @@ func (w *Provider) guessView(e endpoint.Endpoint) string {
 	}
 	return viewPrivate // all other stuff is private
 }
-func (w *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
-	return nil, nil
+
+func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
+	if records, e := p.getMyRecords(ctx); e != nil {
+		return nil, e
+	} else {
+		ret := make([]*endpoint.Endpoint, len(records))
+		for i, rec := range records {
+			ret[i] = rec.endpoint()
+		}
+		return ret, nil
+	}
 }
-func (w *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) error {
+
+func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) error {
 	return nil
 }

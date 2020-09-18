@@ -3,6 +3,7 @@ package wunderdns
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"net"
 	"net/http"
 	"net/url"
@@ -145,5 +146,28 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 }
 
 func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) error {
-	return nil
+	errs := make([]error, 0)
+	for _, ep := range changes.Create {
+		errs = append(errs, p.createRecord(ctx, p.record(ep)))
+	}
+	for _, ep := range changes.UpdateNew {
+		errs = append(errs, p.updateRecord(ctx, p.record(ep)))
+	}
+	for _, ep := range changes.Delete {
+		errs = append(errs, p.deleteRecord(ctx, p.record(ep)))
+	}
+
+	s := strings.Builder{}
+	for _, e := range errs {
+		if e == nil {
+			continue
+		}
+		s.WriteString(e.Error())
+		s.WriteString("; ")
+	}
+	if s.Len() != 0 {
+		return errors.New(s.String())
+	} else {
+		return nil
+	}
 }

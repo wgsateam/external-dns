@@ -69,15 +69,84 @@ func (p *Provider) makeRequest(context context.Context, endpoint, method string,
 }
 
 func (p *Provider) createRecord(ctx context.Context, r *record) error {
-	return nil
+	// Запрос: POST /record
+	//Тело: { "domain":"domain_name", "record":[ {"target":"record_name","type":"A","view":"public|private|*","data":"127.0.0.1"}] }
+	//Ответ: {"status":"SUCCESS", "data":{"error":0,"replies":[{"rows":1}],"success":1}}
+	if domain, e := p.guessDomain(ctx, r); e != nil {
+		return e
+	} else {
+		recName := strings.ReplaceAll(r.name, fmt.Sprintf(".%s", domain), "")
+		data := map[string]interface{}{
+			"domain": domain,
+			"record": []interface{}{
+				map[string]interface{}{
+					"target": recName,
+					"type":   r.rtype,
+					"view":   r.view,
+					"ttl":    r.ttl,
+					"data":   r.data,
+				},
+			},
+		}
+		if d, e := json.Marshal(data); e != nil {
+			return e
+		} else {
+			_, e := p.makeRequest(ctx, "record", "POST", d)
+			return e
+		}
+	}
 }
 
 func (p *Provider) updateRecord(ctx context.Context, r *record) error {
-	return nil
+	if domain, e := p.guessDomain(ctx, r); e != nil {
+		return e
+	} else {
+		recName := strings.ReplaceAll(r.name, fmt.Sprintf(".%s", domain), "")
+		data := map[string]interface{}{
+			"domain": domain,
+			"record": []interface{}{
+				map[string]interface{}{
+					"target": recName,
+					"type":   r.rtype,
+					"view":   r.view,
+					"ttl":    r.ttl,
+					"data":   r.data,
+				},
+			},
+		}
+		if d, e := json.Marshal(data); e != nil {
+			return e
+		} else {
+			_, e := p.makeRequest(ctx, "record", "PUT", d)
+			return e
+		}
+	}
 }
 
 func (p *Provider) deleteRecord(ctx context.Context, r *record) error {
-	return nil
+	if domain, e := p.guessDomain(ctx, r); e != nil {
+		return e
+	} else {
+		recName := strings.ReplaceAll(r.name, fmt.Sprintf(".%s", domain), "")
+		data := map[string]interface{}{
+			"domain": domain,
+			"record": []interface{}{
+				map[string]interface{}{
+					"target": recName,
+					"type":   r.rtype,
+					"view":   r.view,
+					"ttl":    r.ttl,
+					"data":   r.data,
+				},
+			},
+		}
+		if d, e := json.Marshal(data); e != nil {
+			return e
+		} else {
+			_, e := p.makeRequest(ctx, "record", "DELETE", d)
+			return e
+		}
+	}
 }
 
 func (p *Provider) guessDomain(ctx context.Context, r *record) (string, error) {
@@ -90,8 +159,8 @@ func (p *Provider) guessDomain(ctx context.Context, r *record) (string, error) {
 	}
 	var domain string
 	// get max matching domain backwards from .
-	parts := strings.Split(r.name,".")
-	for i := len(parts)-1;i>=0;i-- {
+	parts := strings.Split(r.name, ".")
+	for i := len(parts) - 1; i >= 0; i-- {
 		temp := strings.Join(parts[i:], ".")
 		if _, ok := p.domainsCache[r.view][temp]; ok {
 			domain = temp

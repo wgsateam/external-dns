@@ -13,19 +13,22 @@ import (
 )
 
 const (
-	viewPrivate = "private"
-	viewPublic  = "public"
+	viewPrivate        = "private"
+	viewPublic         = "public"
+	domainsCacheExpiry = 3600 // 1 hour
 )
 
 type Provider struct {
 	provider.BaseProvider
-	url          *url.URL
-	token        string
-	secret       string
-	verify       bool
-	privateNets  []*net.IPNet
-	domainFilter endpoint.DomainFilter
-	httpClient   *http.Client
+	url             *url.URL
+	token           string
+	secret          string
+	verify          bool
+	privateNets     []*net.IPNet
+	domainFilter    endpoint.DomainFilter
+	httpClient      *http.Client
+	domainsCache    map[string]map[string]bool // view - domains
+	domainsCacheTTL int64
 }
 
 func NewProvider(domainFilter endpoint.DomainFilter, confUrl, confToken, confSecret string, confVerify bool) (*Provider, error) {
@@ -50,13 +53,18 @@ func NewProvider(domainFilter endpoint.DomainFilter, confUrl, confToken, confSec
 	if e != nil {
 		return nil, e
 	}
+	domainsCache := make(map[string]map[string]bool)
+	domainsCache[viewPrivate] = make(map[string]bool)
+	domainsCache[viewPublic] = make(map[string]bool)
 	return &Provider{
-		url:          u,
-		token:        confToken,
-		secret:       confSecret,
-		verify:       confVerify,
-		domainFilter: domainFilter,
-		privateNets:  blocks,
+		url:             u,
+		token:           confToken,
+		secret:          confSecret,
+		verify:          confVerify,
+		domainFilter:    domainFilter,
+		privateNets:     blocks,
+		domainsCache:    domainsCache,
+		domainsCacheTTL: 0,
 		httpClient: &http.Client{
 			Transport:     &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: !confVerify}},
 			CheckRedirect: nil,
@@ -66,11 +74,11 @@ func NewProvider(domainFilter endpoint.DomainFilter, confUrl, confToken, confSec
 	}, nil
 }
 
-func (w *Provider) isPrivateIP(ip net.IP) bool {
+func (p *Provider) isPrivateIP(ip net.IP) bool {
 	if ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
 		return true
 	}
-	for _, n := range w.privateNets {
+	for _, n := range p.privateNets {
 		if n.Contains(ip) {
 			return true
 		}
@@ -78,7 +86,7 @@ func (w *Provider) isPrivateIP(ip net.IP) bool {
 	return false
 }
 
-func (w *Provider) guessView(e endpoint.Endpoint) string {
+func (p *Provider) guessView(e *endpoint.Endpoint) string {
 	// guess view by looking at targets
 	if v, ok := e.Labels["view"]; ok {
 		v = strings.ToLower(v) // go lower
@@ -89,7 +97,7 @@ func (w *Provider) guessView(e endpoint.Endpoint) string {
 	if e.RecordType == "A" || e.RecordType == "AAAA" {
 		for _, d := range e.Targets {
 			if ip := net.ParseIP(d); ip != nil {
-				if w.isPrivateIP(ip) {
+				if p.isPrivateIP(ip) {
 					return viewPrivate
 				} else {
 					return viewPublic
@@ -100,7 +108,7 @@ func (w *Provider) guessView(e endpoint.Endpoint) string {
 	} else if e.RecordType == "CNAME" {
 		for _, d := range e.Targets {
 			if ipa, e := net.ResolveIPAddr("", d); e == nil {
-				if w.isPrivateIP(ipa.IP) {
+				if p.isPrivateIP(ipa.IP) {
 					return viewPrivate
 				} else {
 					return viewPublic
@@ -111,7 +119,7 @@ func (w *Provider) guessView(e endpoint.Endpoint) string {
 		for _, d := range e.Targets {
 			t := strings.Split(d, " ") // get last part of SRV record
 			if ipa, e := net.ResolveIPAddr("", t[len(t)-1]); e == nil {
-				if w.isPrivateIP(ipa.IP) {
+				if p.isPrivateIP(ipa.IP) {
 					return viewPrivate
 				} else {
 					return viewPublic
@@ -130,7 +138,7 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 	} else {
 		ret := make([]*endpoint.Endpoint, len(records))
 		for i, rec := range records {
-			ret[i] = rec.endpoint()
+			ret[i] = p.endpoint(rec)
 		}
 		return ret, nil
 	}

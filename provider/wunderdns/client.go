@@ -170,7 +170,7 @@ func (p *Provider) guessDomain(ctx context.Context, r *record) (string, error) {
 }
 
 func (p *Provider) updateDomainCache(ctx context.Context) error {
-	if data, e := p.makeRequest(ctx, "GET", "domain", []byte{}); e != nil {
+	if data, e := p.makeRequest(ctx, "domain", "GET", []byte{}); e != nil {
 		return e
 	} else {
 		// {"status":"SUCCESS","data": { "public": [ { "n": "domain", "t" : "public" } ], "private": [ { "n": "domain", "t" : "private" } ] } }
@@ -197,7 +197,7 @@ func (p *Provider) updateDomainCache(ctx context.Context) error {
 }
 func (p *Provider) getMyRecords(ctx context.Context) ([]*record, error) {
 	ret := make([]*record, 0)
-	if data, e := p.makeRequest(ctx, "GET", "record?own", []byte{}); e == nil {
+	if data, e := p.makeRequest(ctx, "record?own", "GET", []byte{}); e == nil {
 		// {"status":"SUCCESS","data":{"public":[{"d":["data1", "data2"],"f":false,"l":0,"n":"record_name","t":"A"}]}}
 		for view, elems := range data {
 			if !(view == viewPublic || view == viewPrivate) {

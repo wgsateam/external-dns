@@ -218,6 +218,52 @@ func (p *Provider) updateDomainCache(ctx context.Context) error {
 	}
 	return nil
 }
+
+func any2string(v interface{}) string {
+	switch v.(type) {
+	case string:
+		return v.(string)
+	case []byte:
+		return string(v.([]byte))
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+}
+
+func any2int(v interface{}) int {
+	switch v.(type) {
+	case int:
+		return v.(int)
+	case float64:
+		return int(v.(float64))
+	default:
+		v := fmt.Sprintf("%v", v)
+		for i := 0; i < len(v); i++ {
+			if v[i] >= '0' && v[i] <= '9' {
+				continue
+			}
+			v = v[:i]
+			break
+		}
+		i, _ := strconv.Atoi(v)
+		return i
+	}
+}
+
+func any2strings(v interface{}) []string {
+	switch v.(type) {
+	case []string:
+		return v.([]string)
+	case []interface{}:
+		r := make([]string, len(v.([]interface{})))
+		for i := 0; i < len(r); i++ {
+			r[i] = any2string(v.([]interface{})[i])
+		}
+		return r
+	default:
+		return []string{any2string(v)}
+	}
+}
 func (p *Provider) getMyRecords(ctx context.Context) ([]*record, error) {
 	ret := make([]*record, 0)
 	if data, e := p.makeRequest(ctx, "record?own", "GET", []byte{}); e == nil {
@@ -235,10 +281,10 @@ func (p *Provider) getMyRecords(ctx context.Context) ([]*record, error) {
 					continue // not a hash
 				}
 				r := &record{view: view}
-				r.name = rec["n"].(string)
-				r.ttl = int(rec["l"].(float64)) // assume we have float here
-				r.rtype = rec["t"].(string)
-				r.data = rec["d"].([]string)
+				r.name = any2string(rec["n"])
+				r.ttl = any2int(rec["l"])
+				r.rtype = any2string(rec["t"])
+				r.data = any2strings(rec["d"])
 				ret = append(ret, r)
 			}
 		}

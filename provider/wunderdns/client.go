@@ -47,20 +47,26 @@ func debug(v ...interface{}) {
 }
 
 func parseData(data []byte) (data, error) {
-	debug("parseData", string(data))
+	debug("parseData: ", string(data))
 	rep := &reply{}
 	if e := json.Unmarshal(data, rep); e != nil {
 		return nil, e
 	}
 	if rep.Status != "SUCCESS" {
-		if _, ok := rep.Data["error"]; ok {
-			return nil, errors.New("some error") // error is always a string
+		if err, ok := rep.Data["error"]; ok {
+			switch err.(type) {
+			case string:
+				return nil, errors.New(err.(string))
+			default:
+				return nil, errors.New(fmt.Sprintf("%v", err))
+
+			}
 		}
 	}
 	return rep.Data, nil
 }
 func (p *Provider) makeRequest(context context.Context, endpoint, method string, body []byte) (data, error) {
-	debug("makeRequest", endpoint, method, string(body))
+	debug("makeRequest: ", endpoint, " ", method, " ", string(body))
 	if path, e := url.Parse(endpoint); e == nil {
 		u2 := p.url.ResolveReference(path)
 		if req, e := http.NewRequestWithContext(context, method, u2.String(), bytes.NewBuffer(body)); e == nil {
@@ -89,9 +95,6 @@ func (p *Provider) makeRequest(context context.Context, endpoint, method string,
 }
 
 func (p *Provider) createRecord(ctx context.Context, r *record) error {
-	// Запрос: POST /record
-	//Тело: { "domain":"domain_name", "record":[ {"target":"record_name","type":"A","view":"public|private|*","data":"127.0.0.1"}] }
-	//Ответ: {"status":"SUCCESS", "data":{"error":0,"replies":[{"rows":1}],"success":1}}
 	if domain, e := p.guessDomain(ctx, r); e != nil {
 		return e
 	} else {
@@ -218,7 +221,6 @@ func (p *Provider) updateDomainCache(ctx context.Context) error {
 func (p *Provider) getMyRecords(ctx context.Context) ([]*record, error) {
 	ret := make([]*record, 0)
 	if data, e := p.makeRequest(ctx, "record?own", "GET", []byte{}); e == nil {
-		// {"status":"SUCCESS","data":{"public":[{"d":["data1", "data2"],"f":false,"l":0,"n":"record_name","t":"A"}]}}
 		for view, elems := range data {
 			if !(view == viewPublic || view == viewPrivate) {
 				continue // unknown view!
@@ -234,7 +236,7 @@ func (p *Provider) getMyRecords(ctx context.Context) ([]*record, error) {
 				}
 				r := &record{view: view}
 				r.name = rec["n"].(string)
-				r.ttl = rec["l"].(int)
+				r.ttl = int(rec["l"].(float64)) // assume we have float here
 				r.rtype = rec["t"].(string)
 				r.data = rec["d"].([]string)
 				ret = append(ret, r)

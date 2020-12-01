@@ -6,10 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"runtime"
 	"sigs.k8s.io/external-dns/endpoint"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -28,19 +31,36 @@ type record struct {
 	ttl   int
 }
 
+func debug(v ...interface{}) {
+	if _, file, line, ok := runtime.Caller(3); ok {
+		pfx := file
+		for i := 0; i < len(file); i++ {
+			if file[i] == '/' {
+				pfx = file[i+1:]
+			}
+		}
+		pfx = string(append(append([]byte(pfx), ':'), []byte(strconv.Itoa(line))...))
+		log.Debug(append([]interface{}{pfx}, v...)...)
+	} else {
+		log.Debug(v...)
+	}
+}
+
 func parseData(data []byte) (data, error) {
+	debug("parseData", string(data))
 	rep := &reply{}
 	if e := json.Unmarshal(data, rep); e != nil {
 		return nil, e
 	}
 	if rep.Status != "SUCCESS" {
-		if e, ok := rep.Data["error"]; ok {
-			return nil, errors.New(e.(string)) // error is always a string
+		if _, ok := rep.Data["error"]; ok {
+			return nil, errors.New("some error") // error is always a string
 		}
 	}
 	return rep.Data, nil
 }
 func (p *Provider) makeRequest(context context.Context, endpoint, method string, body []byte) (data, error) {
+	debug("makeRequest", endpoint, method, string(body))
 	if path, e := url.Parse(endpoint); e == nil {
 		u2 := p.url.ResolveReference(path)
 		if req, e := http.NewRequestWithContext(context, method, u2.String(), bytes.NewBuffer(body)); e == nil {

@@ -102,6 +102,9 @@ var (
 		TransIPAccountName:          "",
 		TransIPPrivateKeyFile:       "",
 		DigitalOceanAPIPageSize:     50,
+		WunderDNSUrl:                "http://localhost:8080/",
+		WunderDNSToken:              "00000000-0000-0000-0000-000000000000",
+		WunderDNSSecret:             "0000000000000000",
 	}
 
 	overriddenConfig = &Config{
@@ -185,6 +188,9 @@ var (
 		TransIPAccountName:          "transip",
 		TransIPPrivateKeyFile:       "/path/to/transip.key",
 		DigitalOceanAPIPageSize:     100,
+		WunderDNSUrl:                "http://localhost:8081/",
+		WunderDNSToken:              "00000000-0000-0000-0000-000000000001",
+		WunderDNSSecret:             "0000000000000001",
 	}
 )
 
@@ -293,6 +299,9 @@ func TestParseFlags(t *testing.T) {
 				"--transip-account=transip",
 				"--transip-keyfile=/path/to/transip.key",
 				"--digitalocean-api-page-size=100",
+				"--wunderdns-url=http://localhost:8081/",
+				"--wunderdns-token=00000000-0000-0000-0000-000000000001",
+				"--wunderdns-secret=0000000000000001",
 			},
 			envVars:  map[string]string{},
 			expected: overriddenConfig,
@@ -381,6 +390,9 @@ func TestParseFlags(t *testing.T) {
 				"EXTERNAL_DNS_TRANSIP_ACCOUNT":                 "transip",
 				"EXTERNAL_DNS_TRANSIP_KEYFILE":                 "/path/to/transip.key",
 				"EXTERNAL_DNS_DIGITALOCEAN_API_PAGE_SIZE":      "100",
+				"EXTERNAL_DNS_WUNDERDNS_URL":                   "http://localhost:8081/",
+				"EXTERNAL_DNS_WUNDERDNS_TOKEN":                 "00000000-0000-0000-0000-000000000001",
+				"EXTERNAL_DNS_WUNDERDNS_SECRET":                "0000000000000001",
 			},
 			expected: overriddenConfig,
 		},

@@ -28,7 +28,7 @@ func TestGuessView(t *testing.T) {
 	if p.guessView(endpoint.NewEndpoint("abcd.test.com", "CNAME", "dns.google.com")) != viewPublic {
 		t.Errorf("TestGuessView(CNAME) failed")
 	}
-	if p.guessView(endpoint.NewEndpoint("abcd.test.com", "TXT", "dns.google.com")) != viewPublic {
+	if p.guessView(endpoint.NewEndpoint("abcd.test.com", "TXT", "dns.google.com")) != viewPrivate {
 		t.Errorf("TestGuessView(TXT) failed")
 	}
 	if p.guessView(endpoint.NewEndpoint("abcd.test.com", "SRV", "10 60 5060 dns.google.com")) != viewPublic {

@@ -128,7 +128,7 @@ func (p *Provider) guessView(e *endpoint.Endpoint) string {
 			}
 		}
 	} else if e.RecordType == "TXT" { // assume TXT is for external use
-		return viewPublic
+		return viewPrivate
 	}
 	return viewPrivate // all other stuff is private
 }

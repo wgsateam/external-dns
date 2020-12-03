@@ -114,7 +114,16 @@ func (p *Provider) createRecord(ctx context.Context, r *record) error {
 		if d, e := json.Marshal(data); e != nil {
 			return e
 		} else {
-			_, e := p.makeRequest(ctx, "record", "POST", d)
+			if _, e := p.makeRequest(ctx, "record", "POST", d); e == nil {
+				if r.view == viewPublic {
+					var privr *record
+					privr = r
+					privr.view = viewPrivate
+					e := p.createRecord(ctx, privr)
+					return e
+				}
+				return e
+			}
 			return e
 		}
 	}
@@ -140,7 +149,16 @@ func (p *Provider) updateRecord(ctx context.Context, r *record) error {
 		if d, e := json.Marshal(data); e != nil {
 			return e
 		} else {
-			_, e := p.makeRequest(ctx, "record", "PUT", d)
+			if _, e := p.makeRequest(ctx, "record", "PUT", d); e == nil {
+				if r.view == viewPublic {
+					var privr *record
+					privr = r
+					privr.view = viewPrivate
+					e := p.updateRecord(ctx, privr)
+					return e
+				}
+				return e
+			}
 			return e
 		}
 	}
@@ -166,7 +184,16 @@ func (p *Provider) deleteRecord(ctx context.Context, r *record) error {
 		if d, e := json.Marshal(data); e != nil {
 			return e
 		} else {
-			_, e := p.makeRequest(ctx, "record", "DELETE", d)
+			if _, e := p.makeRequest(ctx, "record", "DELETE", d); e == nil {
+				if r.view == viewPublic {
+					var privr *record
+					privr = r
+					privr.view = viewPrivate
+					e := p.deleteRecord(ctx, privr)
+					return e
+				}
+				return e
+			}
 			return e
 		}
 	}

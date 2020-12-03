@@ -101,9 +101,11 @@ func main() {
 	sourceCfg := &source.Config{
 		Namespace:                      cfg.Namespace,
 		AnnotationFilter:               cfg.AnnotationFilter,
+		LabelFilter:                    cfg.LabelFilter,
 		FQDNTemplate:                   cfg.FQDNTemplate,
 		CombineFQDNAndAnnotation:       cfg.CombineFQDNAndAnnotation,
 		IgnoreHostnameAnnotation:       cfg.IgnoreHostnameAnnotation,
+		IgnoreIngressTLSSpec:           cfg.IgnoreIngressTLSSpec,
 		Compatibility:                  cfg.Compatibility,
 		PublishInternal:                cfg.PublishInternal,
 		PublishHostIP:                  cfg.PublishHostIP,

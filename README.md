@@ -140,6 +140,7 @@ The following tutorials are provided:
 * [Linode](docs/tutorials/linode.md)
 * [Nginx Ingress Controller](docs/tutorials/nginx-ingress.md)
 * [NS1](docs/tutorials/ns1.md)
+* [NS Record Creation with CRD Source](docs/tutorials/ns-record.md)
 * [OpenStack Designate](docs/tutorials/designate.md)
 * [Oracle Cloud Infrastructure (OCI) DNS](docs/tutorials/oracle.md)
 * [PowerDNS](docs/tutorials/pdns.md)
@@ -215,6 +216,8 @@ The [tutorials](docs/tutorials) section contains examples, including Ingress res
 # Note
 
 If using a txt registry and attempting to use a CNAME the `--txt-prefix` must be set to avoid conflicts.  Changing `--txt-prefix` will result in lost ownership over previously created records.
+
+If `externalIPs` list is defined for a `LoadBalancer` service, this list will be used instead of an assigned load balancer IP to create a DNS record. It's useful when you run bare metal Kubernetes clusters behind NAT or in a similar setup, where a load balancer IP differs from a public IP (e.g. with [MetalLB](https://metallb.universe.tf)).
 
 # Roadmap
 

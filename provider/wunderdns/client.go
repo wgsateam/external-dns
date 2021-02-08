@@ -225,7 +225,11 @@ func (p *Provider) updateDomainCache(ctx context.Context) error {
 				if !ok {
 					continue // not a hash
 				}
-				p.domainsCache[view][domain["n"].(string)] = true
+				if view == viewPrivate {
+					p.domainsCache[view][domain["n"].(string)] = true
+				} else {
+					p.domainsCache["*"][domain["n"].(string)] = true
+				}
 			}
 		}
 		p.domainsCacheTTL = time.Now().Unix()

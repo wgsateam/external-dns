@@ -15,7 +15,8 @@ import (
 
 const (
 	viewPrivate        = "private"
-	viewPublic         = "*"
+	viewPublic         = "public"
+	viewAll            = "*"
 	domainsCacheExpiry = 3600 // 1 hour
 )
 
@@ -101,7 +102,7 @@ func (p *Provider) guessView(e *endpoint.Endpoint) string {
 				if p.isPrivateIP(ip) {
 					return viewPrivate
 				} else {
-					return viewPublic
+					return viewAll
 				}
 
 			}
@@ -112,7 +113,7 @@ func (p *Provider) guessView(e *endpoint.Endpoint) string {
 				if p.isPrivateIP(ipa.IP) {
 					return viewPrivate
 				} else {
-					return viewPublic
+					return viewAll
 				}
 			}
 		}
@@ -123,7 +124,7 @@ func (p *Provider) guessView(e *endpoint.Endpoint) string {
 				if p.isPrivateIP(ipa.IP) {
 					return viewPrivate
 				} else {
-					return viewPublic
+					return viewAll
 				}
 			}
 		}

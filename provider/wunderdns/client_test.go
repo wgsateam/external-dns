@@ -17,6 +17,9 @@ func TestGuessDomain(t *testing.T) {
 	if n, _ := p.guessDomain(nil, &record{view: viewPublic, name: "fixme.test.net"}); n != "test.net" {
 		t.Errorf("fixme.test.net failed %s", n)
 	}
+	if n, _ := p.guessDomain(nil, &record{view: viewPublic, name: "test.net"}); n != "test.net" {
+		t.Errorf("test.net failed %s", n)
+	}
 	if n, _ := p.guessDomain(nil, &record{view: viewPublic, name: "fixme.eu.test.net"}); n != "eu.test.net" {
 		t.Errorf("fixme.eu.test.net failed %s", n)
 	}

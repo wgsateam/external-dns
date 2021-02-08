@@ -98,7 +98,7 @@ func (p *Provider) createRecord(ctx context.Context, r *record) error {
 	if domain, e := p.guessDomain(ctx, r); e != nil {
 		return e
 	} else {
-		recName := strings.ReplaceAll(r.name, fmt.Sprintf(".%s", domain), "")
+		recName := p.getRecord(ctx, r, domain)
 		data := map[string]interface{}{
 			"domain": domain,
 			"record": []interface{}{
@@ -115,13 +115,6 @@ func (p *Provider) createRecord(ctx context.Context, r *record) error {
 			return e
 		} else {
 			if _, e := p.makeRequest(ctx, "record", "POST", d); e == nil {
-				if r.view == viewPublic {
-					var privr *record
-					privr = r
-					privr.view = viewPrivate
-					e := p.createRecord(ctx, privr)
-					return e
-				}
 				return e
 			}
 			return e
@@ -133,7 +126,7 @@ func (p *Provider) updateRecord(ctx context.Context, r *record) error {
 	if domain, e := p.guessDomain(ctx, r); e != nil {
 		return e
 	} else {
-		recName := strings.ReplaceAll(r.name, fmt.Sprintf(".%s", domain), "")
+		recName := p.getRecord(ctx, r, domain)
 		data := map[string]interface{}{
 			"domain": domain,
 			"record": []interface{}{
@@ -150,13 +143,6 @@ func (p *Provider) updateRecord(ctx context.Context, r *record) error {
 			return e
 		} else {
 			if _, e := p.makeRequest(ctx, "record", "PUT", d); e == nil {
-				if r.view == viewPublic {
-					var privr *record
-					privr = r
-					privr.view = viewPrivate
-					e := p.updateRecord(ctx, privr)
-					return e
-				}
 				return e
 			}
 			return e
@@ -168,7 +154,7 @@ func (p *Provider) deleteRecord(ctx context.Context, r *record) error {
 	if domain, e := p.guessDomain(ctx, r); e != nil {
 		return e
 	} else {
-		recName := strings.ReplaceAll(r.name, fmt.Sprintf(".%s", domain), "")
+		recName := p.getRecord(ctx, r, domain)
 		data := map[string]interface{}{
 			"domain": domain,
 			"record": []interface{}{
@@ -185,17 +171,19 @@ func (p *Provider) deleteRecord(ctx context.Context, r *record) error {
 			return e
 		} else {
 			if _, e := p.makeRequest(ctx, "record", "DELETE", d); e == nil {
-				if r.view == viewPublic {
-					var privr *record
-					privr = r
-					privr.view = viewPrivate
-					e := p.deleteRecord(ctx, privr)
-					return e
-				}
 				return e
 			}
 			return e
 		}
+	}
+}
+
+func (p *Provider) getRecord(ctx context.Context, r *record, domain string) string {
+	recName := strings.ReplaceAll(r.name, fmt.Sprintf(".%s", domain), "")
+	if recName != domain {
+		return recName
+	} else {
+		return "."
 	}
 }
 

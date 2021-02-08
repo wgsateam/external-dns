@@ -15,7 +15,7 @@ import (
 
 const (
 	viewPrivate        = "private"
-	viewPublic         = "public"
+	viewPublic         = "*"
 	domainsCacheExpiry = 3600 // 1 hour
 )
 

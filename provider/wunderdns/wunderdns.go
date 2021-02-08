@@ -16,7 +16,6 @@ import (
 const (
 	viewPrivate        = "private"
 	viewPublic         = "public"
-	viewAll            = "*"
 	domainsCacheExpiry = 3600 // 1 hour
 )
 
@@ -57,7 +56,7 @@ func NewProvider(domainFilter endpoint.DomainFilter, confUrl, confToken, confSec
 	}
 	domainsCache := make(map[string]map[string]bool)
 	domainsCache[viewPrivate] = make(map[string]bool)
-	domainsCache[viewAll] = make(map[string]bool)
+	domainsCache[viewPublic] = make(map[string]bool)
 	return &Provider{
 		url:             u,
 		token:           confToken,
@@ -102,7 +101,7 @@ func (p *Provider) guessView(e *endpoint.Endpoint) string {
 				if p.isPrivateIP(ip) {
 					return viewPrivate
 				} else {
-					return viewAll
+					return viewPublic
 				}
 
 			}
@@ -113,7 +112,7 @@ func (p *Provider) guessView(e *endpoint.Endpoint) string {
 				if p.isPrivateIP(ipa.IP) {
 					return viewPrivate
 				} else {
-					return viewAll
+					return viewPublic
 				}
 			}
 		}
@@ -124,7 +123,7 @@ func (p *Provider) guessView(e *endpoint.Endpoint) string {
 				if p.isPrivateIP(ipa.IP) {
 					return viewPrivate
 				} else {
-					return viewAll
+					return viewPublic
 				}
 			}
 		}

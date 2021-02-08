@@ -115,6 +115,17 @@ func (p *Provider) createRecord(ctx context.Context, r *record) error {
 			return e
 		} else {
 			if _, e := p.makeRequest(ctx, "record", "POST", d); e == nil {
+				if r.view == viewPublic {
+					for b := range p.domainsCache[viewPrivate] {
+						if b == domain {
+							var privr *record
+							privr = r
+							privr.view = viewPrivate
+							e := p.createRecord(ctx, privr)
+							return e
+						}
+					}
+				}
 				return e
 			}
 			return e
@@ -143,6 +154,17 @@ func (p *Provider) updateRecord(ctx context.Context, r *record) error {
 			return e
 		} else {
 			if _, e := p.makeRequest(ctx, "record", "PUT", d); e == nil {
+				if r.view == viewPublic {
+					for b := range p.domainsCache[viewPrivate] {
+						if b == domain {
+							var privr *record
+							privr = r
+							privr.view = viewPrivate
+							e := p.updateRecord(ctx, privr)
+							return e
+						}
+					}
+				}
 				return e
 			}
 			return e
@@ -171,6 +193,17 @@ func (p *Provider) deleteRecord(ctx context.Context, r *record) error {
 			return e
 		} else {
 			if _, e := p.makeRequest(ctx, "record", "DELETE", d); e == nil {
+				if r.view == viewPublic {
+					for b := range p.domainsCache[viewPrivate] {
+						if b == domain {
+							var privr *record
+							privr = r
+							privr.view = viewPrivate
+							e := p.deleteRecord(ctx, privr)
+							return e
+						}
+					}
+				}
 				return e
 			}
 			return e
@@ -225,13 +258,10 @@ func (p *Provider) updateDomainCache(ctx context.Context) error {
 				if !ok {
 					continue // not a hash
 				}
-				if view == viewPrivate {
-					p.domainsCache[view][domain["n"].(string)] = true
-				} else {
-					p.domainsCache[viewAll][domain["n"].(string)] = true
-				}
+				p.domainsCache[view][domain["n"].(string)] = true
 			}
 		}
+
 		p.domainsCacheTTL = time.Now().Unix()
 
 	}

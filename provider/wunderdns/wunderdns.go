@@ -57,7 +57,7 @@ func NewProvider(domainFilter endpoint.DomainFilter, confUrl, confToken, confSec
 	}
 	domainsCache := make(map[string]map[string]bool)
 	domainsCache[viewPrivate] = make(map[string]bool)
-	domainsCache[viewPublic] = make(map[string]bool)
+	domainsCache[viewAll] = make(map[string]bool)
 	return &Provider{
 		url:             u,
 		token:           confToken,

@@ -228,7 +228,7 @@ func (p *Provider) updateDomainCache(ctx context.Context) error {
 				if view == viewPrivate {
 					p.domainsCache[view][domain["n"].(string)] = true
 				} else {
-					p.domainsCache["*"][domain["n"].(string)] = true
+					p.domainsCache[viewAll][domain["n"].(string)] = true
 				}
 			}
 		}
